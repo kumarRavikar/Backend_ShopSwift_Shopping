@@ -3,7 +3,7 @@ const userSchema = new mongoose.Schema({
     firstName:{type:String, required:true},
     lastName:{type:String, required:true},
     profilePic:{type:String, default:""},
-    profilePicPublicId:{type:String}, // cloudnery profilr pic public id for delete 
+    profilePicPublicId:{type:String}, // cloudnery profil pic public id for delete 
     email:{type:String, required:true, unique:true},
     password:{type:String, required:true},
     address:{type:String},
