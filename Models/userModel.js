@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
     city:{type:String},
     pinCode:{type:String},
     phoneNo:{type:String},
-    role:{type:String, enum:['user','admin'], default:'user'},
+    role:{type:String, enum:['user','admin'], default:'admin'},
     isVerified:{type:Boolean, default:false},
     isLoggedIn:{type:Boolean, default:false},
     token:{type:String, default:null},

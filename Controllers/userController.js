@@ -1,9 +1,10 @@
 import { UserModel } from "../Models/userModel.js";
-import bcryptjs, { compare } from "bcryptjs"
+import bcryptjs from "bcryptjs"
 import jwt from 'jsonwebtoken'
 import verifyEmail from "../EmailVerify/emailVeify.js";
 import { SessionModel } from "../Models/sessionModel.js";
 import { sendOTPMail } from "../EmailVerify/sendOTPMail.js";
+import cloudinary from "../utils/cloudinary.js";
 export const register = async (req, res) => {
     try {
         const { firstName, lastName, email, password } = req.body; //extrect from frontend 
@@ -149,7 +150,7 @@ export const login = async(req, res)=>{
             })
         }
         // generating token 
-        const accissToken = jwt.sign({id:existingUser._id},process.env.SECRET_KEY,{expiresIn:'15d'});
+        const accessToken = jwt.sign({id:existingUser._id},process.env.SECRET_KEY,{expiresIn:'15d'});
         const refreshToken = jwt.sign({id:existingUser._id},process.env.SECRET_KEY,{expiresIn:'30d'})
         existingUser.isVerified = true;
         existingUser.isLoggedIn = true
@@ -167,7 +168,7 @@ export const login = async(req, res)=>{
             success:true,
             message:`Welcome Back ${existingUser.firstName}`,
             user:existingUser,
-            accissToken,
+            accessToken,
             refreshToken
          })
     } catch (error) {
@@ -272,11 +273,132 @@ export const verifyOTP = async(req, res)=>{
 }
 export const changePassword = async(req, res)=>{
     try {
-        
+        const {newPassword, confirmPassword} = req.body;
+        const {email} = req.params;
+        const user = await UserModel.findOne({email});
+        if(!user){
+            return res.status(400).json({
+                success:false,
+                message:"User Not Found"
+            })
+        }
+        if(!newPassword || !confirmPassword){
+            return res.status(400).json({
+                success:false,
+                message:"All fields are importent"
+            })
+        }
+        if(newPassword !== confirmPassword){
+            return res.status(400).json({
+                success:false,
+                message:"Password Dose Not Matched"
+            })
+        }
+        const hasedPass = await bcryptjs.hash(newPassword,10);
+        user.password = hasedPass;
+        await user.save()
+        return res.status(200).json({
+            success:true,
+            message:"PassWord Changed Successfully"
+        })
     } catch (error) {
         return res.status(500).json({
             success:false,
             message:error.message 
+        })
+    }
+}
+export const allUsers = async(req, res)=>{
+    try {
+        const user = await UserModel.find();
+        return res.status(200).json({
+            success:true,
+            user
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+export const getUserById = async(req, res)=>{
+   try {
+     const {userId} = req.params; // getting  UserId from request params 
+     const user = await UserModel.findById(userId).select("-password -otp -token -otpExpirey");
+     if(!user){
+        return res.status(400).json({
+            success:false,
+            message:"User not found"
+        })
+     }
+     return res.status(200).json({
+        success:true,
+        user
+     })
+   } catch (error) {
+      return res.status(500).json({
+        success:false,
+        message:error.message
+      })
+   }
+}
+export const updateUser = async(req, res)=>{
+    try {
+        const userIdForUpdate = req.params.id
+        const loggedInUser = req.user
+        const {firstName, lastName, address, zipCode, city, phoneNo, role} = req.body;
+         if(loggedInUser._id.toString() !== userIdForUpdate && loggedInUser.role !== "admin"){
+            res.status(403).json({
+                success:true,
+                message:'You are not allowed to update this profile'
+            })
+         }
+         let user = await UserModel.findById(userIdForUpdate)
+         if(!user){
+            res.status(404).json({
+                success:false,
+                message:"User not found"
+            })
+         }
+         let profilePicUrl = user.profilePic
+         let profilePicPublicId = user.profilePicPublicId
+         //if new profile is uploaded
+         if(req.file){
+            if(profilePicPublicId){
+                await cloudinary.uploader.destroy(profilePicPublicId) // destory the previous profile pic if any from cloudinary
+            }
+            const uploadResult = await new Promise((resolve, reject)=>{
+                const stream = cloudinary.uploader.upload_stream(
+                    {folder:'profiles'},
+                    (error, result)=>{
+                        if(error) reject(error)
+                            else resolve(result)
+                    }
+                )
+                stream.end(req.file.buffer)
+            })
+            profilePicUrl = uploadResult.secure_url
+            profilePicPublicId = uploadResult.public_id
+         }
+         user.firstName = firstName || user.firstName
+         user.lastName = lastName || user.lastName
+         user.address = address || user.address
+         user.city = city || user.city
+         user.zipCode = zipCode || user.zipCode
+         user.phoneNo = phoneNo || user.phoneNo
+         user.profilePic = profilePicUrl
+         user.profilePicPublicId = profilePicPublicId
+         const updatedUser = await user.save()
+         res.status(200).json({
+            success:true,
+            message:"Profile Updated successful",
+            user:updatedUser
+         })
+    } catch (error) {
+        res.status(500).json({
+            success:false,
+            message:error.message
         })
     }
 }
