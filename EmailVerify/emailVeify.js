@@ -28,7 +28,8 @@ const verifyEmail = async (token, email) => {
     };
 
     await transporter.sendMail(mailConfig);
-
+        console.log("RENDER MAIL:", process.env.MAIL_USER);
+console.log("RENDER PASS:", process.env.MAIL_PASS ? "YES" : "NO");
     console.log("Verification email sent successfully");
   } catch (error) {
     console.log("Email sending failed:", error.message);
