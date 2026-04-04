@@ -11,7 +11,7 @@ const verifyEmail = async (token, email) => {
       },
     });
 
-    const verificationLink = `http://localhost:5173/verify/${token}`;
+    const verificationLink = `https://shopswiftshoppingmernstack.vercel.app/verify/${token}`;
 
     const mailConfig = {
       from: process.env.MAIL_USER,

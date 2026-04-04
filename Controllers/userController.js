@@ -32,7 +32,7 @@ export const register = async (req, res) => {
             password:hasedPassword // set hased password
         });
         const token = jwt.sign({id:newUser._id}, process.env.SECRET_KEY,{expiresIn:'10m'}) // creating token 
-        verifyEmail(token, email); // sending email from here
+        await verifyEmail(token, email); // sending email from here
         newUser.token = token; 
          await newUser.save();
         return res.status(201).json({
@@ -105,7 +105,7 @@ export const reVerification = async(req, res)=>{
             })
         }
         const token = jwt.sign({id:user._id},process.env.SECRET_KEY,{expiresIn:'10m'});
-        verifyEmail(token, email);
+        await verifyEmail(token, email);
         user.token = token;
         await user.save();
         return res.status(200).json({
