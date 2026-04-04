@@ -12,7 +12,8 @@ const verifyEmail = async (token, email) => {
         pass: process.env.MAIL_PASS,
       },
     });
-
+     await transporter.verify();
+     console.log("SMTP is working");
     const verificationLink = `https://shopswiftshoppingmernstack.vercel.app/verify/${token}`;
 
     const mailConfig = {
