@@ -36,7 +36,7 @@ const verifyEmail = async (token, email) => {
 //     console.log("Email sending failed:", error.message);
 //   }
 try {
-    const verificationLink = `https://shopswiftshoppingmernstack.vercel.app/verify/${token}`;
+    const verificationLink = `https://shopswiftshoppingmernstack.vercel.app/#/verify/${token}`;
 
     await resend.emails.send({
       from: "onboarding@resend.dev",
