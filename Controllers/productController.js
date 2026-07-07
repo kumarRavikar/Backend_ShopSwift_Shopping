@@ -72,7 +72,7 @@ export const getAllProducts = async (req, res) => {
 };
 export const deleteProduct = async (req, res) => {
   try {
-    const { productId } = req.params;
+    const { productId } = req.params; //getting unique product id for delete
     const product = await ProductModel.findById(productId);
     if (!product) {
       return res.status(404).json({
