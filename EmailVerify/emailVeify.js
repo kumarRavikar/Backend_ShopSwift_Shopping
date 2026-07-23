@@ -39,7 +39,7 @@ try {
     const verificationLink =`https://shopswiftshoppingmernstack-ten.vercel.app/#/verify/${token}`;
 
     await resend.emails.send({
-      from: "https://shopswiftshoppingmernstack-ten.vercel.app",
+      from: "onboarding@resend.dev",
       to: email,
       subject: "Email Verification",
       html: `
