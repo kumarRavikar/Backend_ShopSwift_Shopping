@@ -371,7 +371,7 @@ export const updateUser = async (req, res) => {
       loggedInUser.role !== "admin"
     ) {
       return res.status(403).json({
-        success: true,
+        success: false,
         message: "You are not allowed to update this profile",
       });
     }
@@ -385,7 +385,7 @@ export const updateUser = async (req, res) => {
     let profilePicUrl = user.profilePic;
     let profilePicPublicId = user.profilePicPublicId;
     //if new profile is uploaded
-    if (req.file) {
+    if (req.file && req.file.buffer) {
       if (profilePicPublicId) {
         await cloudinary.uploader.destroy(profilePicPublicId); // destory the previous profile pic if any from cloudinary
       }
