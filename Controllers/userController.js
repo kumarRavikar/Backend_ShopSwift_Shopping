@@ -364,8 +364,8 @@ export const updateUser = async (req, res) => {
   try {
     const userIdForUpdate = req.params.id;
     const loggedInUser = req.user;
-    const { firstName, lastName, address, zipCode, city, phoneNo, role } =
-      req.body;
+
+    // 1. Authorization check
     if (
       loggedInUser._id.toString() !== userIdForUpdate &&
       loggedInUser.role !== "admin"
@@ -375,6 +375,8 @@ export const updateUser = async (req, res) => {
         message: "You are not allowed to update this profile",
       });
     }
+
+    // 2. Find user
     let user = await UserModel.findById(userIdForUpdate);
     if (!user) {
       return res.status(404).json({
@@ -382,44 +384,66 @@ export const updateUser = async (req, res) => {
         message: "User not found",
       });
     }
+
     let profilePicUrl = user.profilePic;
     let profilePicPublicId = user.profilePicPublicId;
-    //if new profile is uploaded
+
+    // 3. Process Cloudinary Image Upload
     if (req.file && req.file.buffer) {
-      if (profilePicPublicId) {
-        await cloudinary.uploader.destroy(profilePicPublicId); // destory the previous profile pic if any from cloudinary
+      try {
+        // Destroy existing picture from Cloudinary safely
+        if (profilePicPublicId) {
+          await cloudinary.uploader.destroy(profilePicPublicId);
+        }
+
+        // Upload new image buffer
+        const uploadResult = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "profiles" },
+            (error, result) => {
+              if (error) return reject(error);
+              resolve(result);
+            }
+          );
+          stream.end(req.file.buffer);
+        });
+
+        profilePicUrl = uploadResult.secure_url;
+        profilePicPublicId = uploadResult.public_id;
+      } catch (cloudinaryError) {
+        console.error("Cloudinary Upload Error:", cloudinaryError);
+        return res.status(500).json({
+          success: false,
+          message: `Image upload failed: ${cloudinaryError.message}`,
+        });
       }
-      const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "profiles" },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          },
-        );
-        stream.end(req.file.buffer);
-      });
-      profilePicUrl = uploadResult.secure_url;
-      profilePicPublicId = uploadResult.public_id;
     }
-    user.firstName = firstName || user.firstName;
-    user.lastName = lastName || user.lastName;
-    user.address = address || user.address;
-    user.city = city || user.city;
-    user.zipCode = zipCode || user.zipCode;
-    user.phoneNo = phoneNo || user.phoneNo;
+
+    // 4. Update fields safely (skipping literal "undefined" strings)
+    const body = req.body;
+    
+    if (body.firstName && body.firstName !== "undefined") user.firstName = body.firstName;
+    if (body.lastName && body.lastName !== "undefined") user.lastName = body.lastName;
+    if (body.address && body.address !== "undefined") user.address = body.address;
+    if (body.city && body.city !== "undefined") user.city = body.city;
+    if (body.zipCode && body.zipCode !== "undefined") user.zipCode = body.zipCode;
+    if (body.phoneNo && body.phoneNo !== "undefined") user.phoneNo = body.phoneNo;
+
     user.profilePic = profilePicUrl;
     user.profilePicPublicId = profilePicPublicId;
+
     const updatedUser = await user.save();
+
     return res.status(200).json({
       success: true,
-      message: "Profile Updated successful", 
+      message: "Profile updated successfully",
       user: updatedUser,
     });
   } catch (error) {
+    console.error("Update User Error:", error);
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Internal Server Error",
     });
   }
 };
