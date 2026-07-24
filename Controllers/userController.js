@@ -426,7 +426,7 @@ export const updateUser = async (req, res) => {
     if (body.lastName && body.lastName !== "undefined") user.lastName = body.lastName;
     if (body.address && body.address !== "undefined") user.address = body.address;
     if (body.city && body.city !== "undefined") user.city = body.city;
-    if (body.zipCode && body.zipCode !== "undefined") user.zipCode = body.zipCode;
+    if (body.zipCode && body.zipCode !== "undefined") user.pinCode = body.zipCode;
     if (body.phoneNo && body.phoneNo !== "undefined") user.phoneNo = body.phoneNo;
 
     user.profilePic = profilePicUrl;
