@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
     password:{type:String, required:true},
     address:{type:String},
     city:{type:String},
-    pinCode:{type:String},
+    zipCode:{type:String},
     phoneNo:{type:String},
     role:{type:String, enum:['user','admin'], default:'user'},
     isVerified:{type:Boolean, default:false},
